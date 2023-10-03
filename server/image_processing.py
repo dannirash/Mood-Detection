@@ -54,6 +54,7 @@ def process_image(snapshot_path):
         
         # Save the annotated image with detection results
         cv2.imwrite('pics/annotated_snapshot.jpg', image)
-        return 'Image processed successfully', 200
+
+        return 'pics/annotated_snapshot.jpg'
     except Exception as e:
         return f'Error processing image: {str(e)}', 500

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Webcam from 'react-webcam';
+import "./CameraComponent.css"
 
 const CameraComponent = () => {
   const webcamRef = useRef(null);
@@ -7,6 +8,7 @@ const CameraComponent = () => {
   const [videoDevices, setVideoDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [snapshot, setSnapshot] = useState(null);
+  const [annotatedSnapshot, setAnnotatedSnapshot] = useState(null);
 
   useEffect(() => {
     async function getVideoDevices() {
@@ -45,31 +47,29 @@ const CameraComponent = () => {
     }
   };
 
-  const takeSnapshot = () => {
+  const takeSnapshot = async () => {
     const imageSrc = webcamRef.current.getScreenshot();
-  
-    // Create a Blob from the base64-encoded image
-    const blob = dataURItoBlob(imageSrc);
-  
-    // Create a FormData object to send the image to the server
+    setSnapshot(imageSrc);
+
+    // Send the image to the server and get the annotated image URL
     const formData = new FormData();
-    formData.append('snapshot', blob, 'snapshot.jpg'); // 'snapshot.jpg' is the desired file name
-  
-    // Send the formData to your backend using a fetch or Axios
-    fetch('/camera', {
-      method: 'POST',
-      body: formData,
-    })
-      .then((response) => {
-        // Handle the response from the server
-        console.log('Snapshot saved successfully');
-      })
-      .catch((error) => {
-        console.error('Error saving snapshot:', error);
+    formData.append('snapshot', dataURItoBlob(imageSrc));
+
+    try {
+      const response = await fetch('/camera', {
+        method: 'POST',
+        body: formData,
       });
 
-    
-    setSnapshot(imageSrc);
+      if (response.ok) {
+        const imageBlob = await response.blob();
+        setAnnotatedSnapshot(URL.createObjectURL(imageBlob));
+      } else {
+        console.error('Error processing snapshot on the server');
+      }
+    } catch (error) {
+      console.error('Error sending snapshot to the server:', error);
+    }
   };
   
   // Function to convert data URI to Blob
@@ -88,46 +88,52 @@ const CameraComponent = () => {
   
   return (
     <div>
-      <div>
-        <Webcam
-          audio={false}
-          ref={webcamRef}
-          width={640}
-          height={480}
-          screenshotFormat="image/jpeg"
-          videoConstraints={{
-            facingMode: 'user',
-            deviceId: selectedDeviceId, // Use the selected camera
-          }}
-          style={{ display: isCameraOn ? 'block' : 'none' }}
-        />
-        {snapshot && (
-          <img src={snapshot} alt="Snapshot" style={{ display: 'block', width: '100%' }} />
-        )}
+      <div className="camera-container">
+        <div className="camera-preview">
+          <Webcam
+            audio={false}
+            ref={webcamRef}
+            width={640}
+            height={480}
+            screenshotFormat="image/jpeg"
+            videoConstraints={{
+              facingMode: 'user',
+              deviceId: selectedDeviceId, // Use the selected camera
+            }}
+            style={{ display: isCameraOn ? 'block' : 'none' }}
+          />
+        </div>
+        <div className="camera-preview">
+          {annotatedSnapshot && (
+            <div>
+              <img src={annotatedSnapshot} alt="Analyzed Snapshot" />
+            </div>
+          )}
       </div>
-      <div>
-        <label>Select Camera:</label>
-        <select
-          onChange={(e) => setSelectedDeviceId(e.target.value)}
-          value={selectedDeviceId || ''}
-        >
-          <option value="">Default Camera</option>
-          {videoDevices.map((device) => (
-            <option key={device.deviceId} value={device.deviceId}>
-              {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
-            </option>
-          ))}
-        </select>
-        <button onClick={startCamera} disabled={isCameraOn}>
-          Start Camera
-        </button>
-        <button onClick={stopCamera} disabled={!isCameraOn}>
-          Stop Camera
-        </button>
-        <button onClick={takeSnapshot} disabled={!isCameraOn}>
-          Take Snapshot
-        </button>
       </div>
+        <div className="camera-controls">
+          <label>Select Camera:</label>
+          <select
+            onChange={(e) => setSelectedDeviceId(e.target.value)}
+            value={selectedDeviceId || ''}
+          >
+            <option value="">Default Camera</option>
+            {videoDevices.map((device) => (
+              <option key={device.deviceId} value={device.deviceId}>
+                {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
+              </option>
+            ))}
+          </select>
+          <button onClick={startCamera} disabled={isCameraOn}>
+            Start Camera
+          </button>
+          <button onClick={stopCamera} disabled={!isCameraOn}>
+            Stop Camera
+          </button>
+          <button onClick={takeSnapshot} disabled={!isCameraOn}>
+            Take Snapshot
+          </button>
+        </div>
     </div>
   );
 };

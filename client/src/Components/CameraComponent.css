@@ -1,0 +1,11 @@
+.camera-container {
+    display: flex;
+    align-items: center; /* Vertically center items */
+  }
+  
+  .camera-controls {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+    align-items: flex-start; /* Align buttons to the left */
+  }
+  

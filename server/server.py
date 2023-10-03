@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, send_file
 from image_processing import process_image
 
 app = Flask(__name__)
@@ -11,9 +11,9 @@ def process_image_endpoint():
             snapshot_path = 'pics/snapshot.jpg'
             snapshot_file.save(snapshot_path)
              # Call the image processing function
-            result, status_code = process_image(snapshot_path)
-            
-            return result, status_code
+            annotated_snapshot_path = process_image(snapshot_path)
+            # Return the annotated image
+            return send_file(annotated_snapshot_path, mimetype='image/jpeg')
         else:
             return 'Snapshot file not found', 400
     except Exception as e:
