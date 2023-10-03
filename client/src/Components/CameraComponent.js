@@ -67,7 +67,8 @@ const CameraComponent = () => {
       .catch((error) => {
         console.error('Error saving snapshot:', error);
       });
-  
+
+    
     setSnapshot(imageSrc);
   };
   
